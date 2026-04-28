@@ -32,6 +32,12 @@ cd scope
 
 make sure you have the latest version of [Node.JS](https://nodejs.org/en/download) alongside the latest version of [FFmpeg](https://www.ffmpeg.org/download.html) for the bot to run and have support for the ffmpeg related commands (older ffmpeg versions mess up with the image processing for some reason ???)
 
+deploy commands before adding new ones or js hosting the bot for the first time
+
+```bash
+node deploy-commands.js
+```
+
 to run the bot genuinely just do
 
 ```bash

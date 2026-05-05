@@ -3,6 +3,8 @@ const path = require('path');
 
 const keysPath = path.join(__dirname, '../keys.json');
 
+const whitelistdisabled = true;
+
 function getKeys() {
     try {
         return JSON.parse(fs.readFileSync(keysPath, 'utf8'));
@@ -17,6 +19,9 @@ function saveKeys(data) {
 }
 
 function isAuthorized(userId) {
+    if(whitelistdisabled) {
+        return "user"
+    }
     const data = getKeys();
     const user = data.validusers[userId];
     return user?.rank

@@ -94,3 +94,4 @@ i am not teaching you how to use self-explanatory commands.
 - distrokid artist notifications (just tells you when ur audio gets uploaded fully lol)
 - asset monitoring
 - user whitelists
+- distrokid/roblox compression test

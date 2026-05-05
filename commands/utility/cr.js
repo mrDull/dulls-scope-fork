@@ -62,8 +62,8 @@ module.exports = {
         const speedPercent = interaction.options.getNumber('speed') ?? 5;
         const speedMultiplier = 1 + (speedPercent / 100);
 
-        const lowcut = interaction.options.getNumber('low') ?? 400;
-        const highcut = interaction.options.getNumber('high') ?? 1100;
+        const lowcut = interaction.options.getNumber('low') ?? 1450;
+        const highcut = interaction.options.getNumber('high') ?? 3500;
 
 		const tempDir = path.join(__dirname, '..', 'temp');
 		if (!fs.existsSync(tempDir)) {

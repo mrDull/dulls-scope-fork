@@ -30,7 +30,7 @@ module.exports = {
 				.setDescription('aud')
 				.setRequired(true)
 		)
-        .setContexts([InteractionContextType.Guild, InteractionContextType.PrivateChannel]),
+        .setContexts([InteractionContextType.Guild, InteractionContextType.PrivateChannel, InteractionContextType.BotDM]),
     async execute(interaction) {
         await interaction.deferReply();
 
@@ -63,9 +63,11 @@ module.exports = {
 
         const waveformSize = "1920x660"
 
+        const peakColor = "3232C8"
+        const rmsColor = "6464DC"
         await execFilePromise("ffmpeg", [
             "-i", inputPath,
-            "-filter_complex", `[0:a]showwavespic=s=${waveformSize}:colors=3232C8:filter=peak[peaks];[0:a]showwavespic=s=${waveformSize}:colors=6464DC:filter=average[rms];[peaks][rms]overlay`,
+            "-filter_complex", `[0:a]showwavespic=s=${waveformSize}:colors=${peakColor}:filter=peak:split_channels=1[peaks];[0:a]showwavespic=s=${waveformSize}:colors=${rmsColor}:filter=average:split_channels=1[rms];[peaks][rms]overlay`,
             "-update", "1", waveformPath
         ]);
 

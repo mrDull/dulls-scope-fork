@@ -34,12 +34,6 @@ make sure you have the latest version of [Node.JS](https://nodejs.org/en/downloa
 
 please make sure to add your discord userid into the keys.json before running the bot or else nothing will load.
 
-deploy commands before adding new ones or js hosting the bot for the first time
-
-```bash
-node deploy-commands.js
-```
-
 to run the bot genuinely just do
 
 ```bash

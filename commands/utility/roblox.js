@@ -36,6 +36,10 @@ module.exports = {
 		)
         .setContexts([InteractionContextType.Guild, InteractionContextType.PrivateChannel, InteractionContextType.BotDM]),
     
+    // this simulates what rblx does to ur audio when u upload it. they
+    // re-encode it to ogg vorbis, which destroys quality if u were already
+    // at the edge. running 2 passes locally is a decent approximation of
+    // "would this still sound okay after rblx fucks it"
     async execute(interaction) {
         await interaction.deferReply();
 
@@ -63,6 +67,9 @@ module.exports = {
             await interaction.editReply('first compression pass...');
             await execFilePromise("ffmpeg", [
                 "-i", inputPath,
+                "-map_metadata", "-1",
+                "-fflags", "+bitexact",
+                "-flags:a", "+bitexact",
                 "-c:a", "libvorbis",
                 "-q:a", quality,
                 "-y",
@@ -72,6 +79,9 @@ module.exports = {
             await interaction.editReply('second compression pass... (ty kaid)');
             await execFilePromise("ffmpeg", [
                 "-i", firstPassPath,
+                "-map_metadata", "-1",
+                "-fflags", "+bitexact",
+                "-flags:a", "+bitexact",
                 "-c:a", "libvorbis",
                 "-q:a", quality,
                 "-y",
@@ -89,9 +99,9 @@ module.exports = {
             const stream = data.streams.find(s => s.codec_type === "audio");
 
             const waveformSize = "1920x660";
-
             const peakColor = "3232C8"
             const rmsColor = "6464DC"
+
             await execFilePromise("ffmpeg", [
                 "-i", secondPassPath,
                 "-filter_complex", `[0:a]showwavespic=s=${waveformSize}:colors=${peakColor}:filter=peak:split_channels=1[peaks];[0:a]showwavespic=s=${waveformSize}:colors=${rmsColor}:filter=average:split_channels=1[rms];[peaks][rms]overlay`,

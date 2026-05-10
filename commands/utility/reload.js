@@ -8,7 +8,9 @@ module.exports = {
         .setContexts(InteractionContextType.PrivateChannel),
 	async execute(interaction) {
 
-        if (interaction.user.id != "793861073237180427") {
+        // owner-only. lets me reload a single command file at runtime without
+        // restarting the whole bot. swap the id if u forked this
+        if (interaction.user.id != "271387672986124289") {
 			return interaction.reply({
 				content: "you do not have access to this command."
 			})
@@ -17,6 +19,7 @@ module.exports = {
 		const commandName = interaction.options.getString('command', true).toLowerCase();
 		const command = interaction.client.commands.get(commandName);
 
+        // bust node's require cache so the next require() reads from disk again
         delete require.cache[require.resolve(`./${command.data.name}.js`)];
 
         try {

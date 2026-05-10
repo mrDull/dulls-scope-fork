@@ -7,6 +7,8 @@ const path = require('path');
 const execPromise = promisify(exec);
 const execFilePromise = promisify(execFile);
 
+// quick loudness probe via ffmpeg ebur128. could just use utils/loudness.js
+// but this was written before that existed lol. either works
 function getLoudness(filePath) {
   return new Promise(function(resolve, reject) {
         execFilePromise("ffmpeg", ["-i", filePath, "-af", "ebur128=peak=true", "-f", "null", "-"], (_, __, stderr) => {
@@ -51,6 +53,8 @@ module.exports = {
 
         // i swear like most of this is reused code from past commands LMFAO
 
+        // run ffprobe + the loudness probe in parallel since neither depends
+        // on the other. saves a couple seconds on big files
         await interaction.editReply('analyzing...');
         const [probeResult, loudness] = await Promise.all([
             execFilePromise("ffprobe", ["-v", "quiet", "-print_format", "json", "-show_format", "-show_streams", inputPath]),
@@ -62,9 +66,9 @@ module.exports = {
         const stream = data.streams.find(s => s.codec_type === "audio");
 
         const waveformSize = "1920x660"
-
         const peakColor = "3232C8"
         const rmsColor = "6464DC"
+
         await execFilePromise("ffmpeg", [
             "-i", inputPath,
             "-filter_complex", `[0:a]showwavespic=s=${waveformSize}:colors=${peakColor}:filter=peak:split_channels=1[peaks];[0:a]showwavespic=s=${waveformSize}:colors=${rmsColor}:filter=average:split_channels=1[rms];[peaks][rms]overlay`,

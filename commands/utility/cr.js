@@ -1,8 +1,9 @@
-const {InteractionContextType,SlashCommandBuilder,AttachmentBuilder} = require('discord.js');
+const {InteractionContextType,SlashCommandBuilder,AttachmentBuilder,MessageFlags} = require('discord.js');
 const {exec} = require('child_process');
 const {promisify} = require('util');
 const fs = require('fs');
 const path = require('path');
+const {isWhitelisted} = require('../../utils/key');
 
 const execPromise = promisify(exec);
 
@@ -44,6 +45,12 @@ module.exports = {
 		)
 		.setContexts([InteractionContextType.Guild, InteractionContextType.PrivateChannel]),
 	async execute(interaction) {
+		if (!isWhitelisted(interaction.user.id)) {
+			return interaction.reply({
+				content: 'you are not whitelisted to use this command. ask dreams to whitelist you.',
+				flags: MessageFlags.Ephemeral,
+			});
+		}
 		await interaction.deferReply();
 
 		if (interaction.user.id == "1456822669969461483") {
@@ -83,11 +90,11 @@ module.exports = {
 			await interaction.editReply('processing aud...');
 
             const centerFreq = (lowcut+highcut)/2;
-            const holeWidth = Math.abs(highcut-lowcut); // this retard really had me add ts for him :sob:
+            const holeWidth = Math.abs(highcut-lowcut); 
 
 			const samplerate = getSampleRate(inputPath)
 
-			const encode = `-c:a libmp3lame -b:a 192k` // im too lazy to restore the old one so itll js stay here as an argument ignore me
+			const encode = `-map_metadata -1 -fflags +bitexact -flags:a +bitexact -c:a libmp3lame -b:a 192k` // im too lazy to restore the old one so itll js stay here as an argument ignore me
 			
 			const eqFilter = `anequalizer=c0 f=${centerFreq} w=${holeWidth} g=-90 t=2|c1 f=${centerFreq} w=${holeWidth} g=-90 t=2`;
 			const command = `ffmpeg -i "${inputPath}" -af "asetrate=${samplerate}*${speedMultiplier}, aresample=48000, ${eqFilter}, ${eqFilter}, ${eqFilter}" ${encode} "${outputPath}"`;

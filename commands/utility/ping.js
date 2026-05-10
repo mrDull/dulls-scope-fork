@@ -18,12 +18,23 @@ module.exports = {
             const usedRAM = (mem.active / 1024 / 1024 / 1024).toFixed(2);
             const totalRAM = (mem.total / 1024 / 1024 / 1024).toFixed(2);
 
+            // skip the virtual/pass-through gpus (parsec, hyper-v, ms basic
+            // display, etc.) then pick whatever's left with the most vram.
+            // on a system with integrated + discrete this gets us the discrete one.
+            // i did this so i can look cool cuz i have 5080 lol
+            const virtualGpus = ['parsec', 'microsoft basic', 'virtual', 'remote', 'hyper-v', 'idd'];
+            const realGpus = graphics.controllers.filter((c) => {
+                const name = (`${c.model || ''} ${c.vendor || ''}`).toLowerCase();
+                return !virtualGpus.some((v) => name.includes(v));
+            });
+            const realGpu = realGpus.sort((a, b) => (b.vram || 0) - (a.vram || 0))[0];
+
             await interaction.editReply(
                 `im awake and running on ${os.hostname()}\n\n` +
                 `os: ${osInfo.distro}\n` +
                 `cpu: ${cpu.manufacturer} ${cpu.brand}\n` +
                 `ram: ${usedRAM}GB / ${totalRAM}GB\n` +
-                `gpu: ${graphics.controllers[0]?.model || 'Integrated'}`
+                `gpu: ${realGpu?.model || graphics.controllers[0]?.model || 'Integrated'}`
             );
         } catch (error) {
             console.error(error);

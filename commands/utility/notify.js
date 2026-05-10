@@ -1,6 +1,9 @@
 const { InteractionContextType, SlashCommandBuilder, InviteStageInstance } = require('discord.js');
 require('dotenv').config();
 
+// polls rblx's toolbox-service for new audio releases by an artist name.
+// kinda hacky but it works. setInterval ids are stored in `artists` keyed
+// by artist name, so /notify with the same artist again will turn it OFF.
 const artists = new Map();
 const ROBLOX_COOKIE = process.env.ROBLOX_COOKIE;
 

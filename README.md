@@ -1,93 +1,110 @@
+# scope (dull's fork)
 
-# scope : utility bot
-![Logo](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT_NH_qgsL6wVSx42yn8xVYLtKFRA-IAPFdmSv9guPuJKA9B1-iZglIePrA4uqXTkYBjlJNScT_JqTxEnANjc1AKcNGyvPfSfGnOahIDg&s=10)
+discord bot for messing with audio through ffmpeg. all the actual code and design is by [@typicaalusername](https://github.com/typicaalusername) and Turtwig, go check out the [original repo](https://github.com/typicaalusername/scope), thats the real one.
 
-scope by typicaalusername and turtwig
+this fork is just me reading through it and dropping casual comments inline so i (and anyone else cloning this) can follow whats going on. most of this here is work of typicalusername and turtwig, i added some cmds and js tidied up a biot. its the same scope with notes in the margins basically. also threw in a `.gitignore` and example config files so its easier to spin up locally.
 
-inspired heavily by 2slimey
+mostly using this as a way to learn ffmpeg filter chains, audio normalization, spectral editing, and how a discord bot wires up slash commands. not a copyright tool, dont be weird with it.
 
-[Stream More Anxiety by 2slimey on Spotify](https://open.spotify.com/album/7sSUDNtZti6vG3kzRIdCF3?si=KdfVJVEzTBWG23ltwdEfCw)
-## Authors
+## what it does
 
-- [@typicaalusername](https://www.github.com/typicaalusername)
-- [2slimey](https://open.spotify.com/artist/0ZXbQLu4a7sk3iQ8tlgFy4?si=bqfN260qRUCACFcTx2oxfg)
-- Turtwig (@wiimenu)
+audio processing:
 
-Project originally made as a contribution to Project: Numlock (God Bless 1985)
-## License
+- `/loud` runs a loud chain on a file. pick from 6 presets: `amherst`, `faceslasha`, `angel`, `dollydrugs`, `clean`, `cleansafe` (cleansafe is the new one, targets ~-10 LUFS with a hard ceiling at -1.5 dBFS so it never peaks)
+- `/yt` downloads a youtube video as an mp3 (optional bitrate: 128/192/256/320 kbps, default 192). caps duration at 15 min. pairs nicely with /loud
+- `/compare` runs every preset on the same file at once so u can a/b them
+- `/analyze` duration, bitrate, sample rate, LUFS, peak, waveform image
+- `/roblox` runs your file through 2 ogg vorbis passes to simulate what rblx does on upload
+- `/cr` spectral notch filter (anequalizer hole) with optional speed shift
+- `/intro` prepend an intro audio
+- `/bait` prepend a bait audio with optional pitch shift
+- `/endbait` append a hard limited endbait (looped to 6:59)
+- `/full` bait + intro + audio (+ optional loud chain) + optional endbait, one shot
 
-[GNU General Public License v3.0](https://choosealicense.com/licenses/gpl-3.0/)
+roblox stuff:
 
-scope is an open source project for  a reason as none of these features should even be behind any paywall nor a private community
+- `/upload` upload audio to roblox via open cloud
+- `/batch` upload up to 5 audios at once
+- `/lookup` fetch info + download for any rblx asset id
+- `/monitor` poll moderation status until it changes
+- `/notify` dm u when a roblox artist drops a new release
+- `/history` your recent uploads
 
-feel free to do as you wish with scope, just please add credit if you are going to reuse bits of my code
-## Installation
+utility:
 
-install via git
+- `/setpreset` set your default `/loud` preset
+- `/whitelist` and `/blacklist` owner only access control
+- `/ping` system info
 
-```bash
-git clone https://github.com/typicaalusername/scope.git
-cd scope
+## setup
+
+u need:
+
+- [node.js](https://nodejs.org/en/download), any recent LTS
+- [ffmpeg](https://www.ffmpeg.org/download.html) on your PATH. older builds are buggy with the waveform/spectrogram filters so get a recent one
+
+clone + install:
+
+```
+git clone https://github.com/mrDull/dulls-scope-fork.git
+cd dulls-scope-fork
+npm install
 ```
 
-make sure you have the latest version of [Node.JS](https://nodejs.org/en/download) alongside the latest version of [FFmpeg](https://www.ffmpeg.org/download.html) for the bot to run and have support for the ffmpeg related commands (older ffmpeg versions mess up with the image processing for some reason ???)
+copy the example files and fill in your own values:
 
-please make sure to add your discord userid into the keys.json before running the bot or else nothing will load.
+```
+copy config.example.json config.json
+copy .env.example .env
+```
 
-to run the bot genuinely just do
+what goes in `config.json`:
 
-```bash
+- `token` is your discord bot token. make a bot at [discord.com/developers/applications](https://discord.com/developers/applications)
+- `clientId` is your bot's application id (same page)
+- `guildId` is optional. only needed if u switch deploy-commands.js to guild scoped for testing
+- `robloxApiKey` is an open cloud api key from [create.roblox.com/dashboard/credentials](https://create.roblox.com/dashboard/credentials). needs `Assets API` with `asset:read` + `asset:write`
+- `robloxUserId` is your numeric roblox user id (from your profile url)
+
+what goes in `.env`:
+
+- `ROBLOX_COOKIE` is your `.ROBLOSECURITY` cookie. only needed for `/notify` and `/lookup`. this is account level auth, do NOT leak it.
+
+set urself as the owner. make `utils/owners.json` with your discord user id like this:
+
+```json
+["YOUR_DISCORD_ID"]
+```
+
+get ur discord id by right clicking ur name with developer mode on. the bot uses owners.json to gate `/whitelist`, `/blacklist`, etc.
+
+deploy the slash commands to discord (only re-run this when u change a command's name, description, or options. NOT when u change the code inside `execute`):
+
+```
+node deploy-commands.js
+```
+
+run the bot:
+
+```
 node index.js
 ```
 
-and itll be fine until it crashes lol
+## stuff worth reading if ur trying to learn
 
-you have to provide a roblox cookie in the .env file for /monitor and the /notify commands to work.
+- `utils/presets.js` every loud preset is a different ffmpeg filter chain with comments breaking down what each stage does (eq, compressor, limiter, etc)
+- `commands/utility/cr.js` anequalizer notch filter, asetrate pitch shifting
+- `commands/utility/full.js` multi input filter graph that concatenates audio with different processing per source
+- `commands/utility/analyze.js` using ebur128 for LUFS / true peak measurement
+- `utils/roblox.js` uploading assets through roblox open cloud (multipart + operation polling)
+- `utils/monitor.js` polling pattern for an async moderation api
 
-everything else is in config.json which i think most of you can figure out yourselves
-## Acknowledgements
+## credits
 
-theres some bugs where the bot can just randomly crashed that i never fully diagnosed nor cared about
+- original [scope](https://github.com/typicaalusername/scope) by [@typicaalusername](https://github.com/typicaalusername) and Turtwig (@wiimenu)
+- inspired by 2slimey ([spotify](https://open.spotify.com/artist/0ZXbQLu4a7sk3iQ8tlgFy4))
+- originally made as a contribution to Project: Numlock
 
-one prime example being when its running in a gc and the member running it gets kicked, itll immediately crash LOL
+## license
 
-you can easily fix these issues but honestly its not my problem as this was a passion project nonetheless
-## FAQ
-
-#### Will you continue to add features to scope?
-
-probably not unless i come across someone selling something easy to implement and add it for free. i hate people that upsell shit that can be easily remade and distributed for No cost whatsoever
-
-#### Why are you releasing scope?
-
-people kept dming me about scope and it overtime got annoying since people used me for it. i also just didnt like constantly having to worry about it turning off. plus the code was Bound to be remade without a whitelist behind it so i dont mind releasing it so people dont have to make more vibecoded slop.
-
-#### Can I remove the whitelist?
-
-yh i dont care
-
-#### Why isn't the copyright method always working?
-
-as with other cr settings, its hit or miss. most of the time if you increase the high a bit itll work on higher cr songs but most if not all will work by default. distrokid can flag some songs with default settings btw (hence why i added arguments to customize it to your likeness)
-
-#### Why 2slimey?
-
-thought it was funny as this bot was initially made as a little jab at those paywalled bots that are horrid, and also i never really take developing seriously since this is all a hobby of mine.
-
-#### Why is some of the code abysmal?
-
-because im lazy and why fix what aint broke lol. i also just really dont care since i just made this to make my life easier
-
-## Usage
-
-add the app to your profile and then use it
-
-i am not teaching you how to use self-explanatory commands.
-## Features
-
-- copyright bypass
-- file analyzation for people that rely on nearly useless file info
-- distrokid artist notifications (just tells you when ur audio gets uploaded fully lol)
-- asset monitoring
-- user whitelists
-- distrokid/roblox compression test
+[GNU GPL v3.0](https://choosealicense.com/licenses/gpl-3.0/), same as the original. do whatever, just credit where its due.

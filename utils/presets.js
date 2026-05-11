@@ -210,6 +210,58 @@ const PRESETS = {
 			].join(',');
 		},
 	},
+
+	// cleansafe: clean's gentler sibling. targets ~-10 LUFS but the
+	// LIMITER IS THE FINAL FILTER, so by construction nothing can ever
+	// produce samples above -1.5 dBFS. ported from the darkaudacity test
+	// macro (see /cleansafe.txt). compared to clean: shorter compression
+	// chain, much smaller makeup push (+6 vs +20 dB), and crucially the
+	// post-limiter volume boost is GONE.
+	cleansafe: {
+		description: 'cleansafe: ~-10 LUFS, peak locked at -1.5 dBFS, no distortion',
+		preNormFilter: `${MONO_BASE},bass=g=-5`,
+		buildChain(normalizeGain) {
+			return [
+				'aresample=96000',
+				'aformat=channel_layouts=mono:sample_fmts=s16',
+				// softer bass cut, same as clean
+				'bass=g=-5',
+				`volume=${normalizeGain.toFixed(3)}dB`,
+				// amherst low-freq rolloff curve
+				`firequalizer=gain_entry=${eqEscaped}`,
+				// +2 dB shelf at 3 kHz - presence/loudness perception bump
+				'treble=g=2:f=3000',
+
+				// 3-stage compression (matches the darkaudacity test macro).
+				// slow attacks mimic audacity's compressor minimums (100ms+),
+				// which lets transients through and catches sustain. cleaner
+				// sounding than fast-attack squashing.
+				// makeup values approximate audacity's NormalizeGain=1
+				// behavior (peak returns to ~0 dBFS after each stage).
+				// stage 1: leveler.   thresh -20 dB, ratio 3
+				'acompressor=threshold=0.1:ratio=3:attack=200:release=2000:makeup=3.16:knee=8',
+				// stage 2: density.   thresh -14 dB, ratio 4
+				'acompressor=threshold=0.2:ratio=4:attack=100:release=1000:makeup=2.24:knee=5',
+				// stage 3: peak ctrl. thresh -9 dB,  ratio 6
+				'acompressor=threshold=0.355:ratio=6:attack=100:release=1000:makeup=1.78:knee=3',
+
+				// tanh saturation. rounds the knee like audacity's SoftLimit
+				// does, and adds a little perceived density before the brick
+				// wall does its thing.
+				'asoftclip=type=tanh',
+
+				// +6 dB push into the limiter. matches the macro's final
+				// Amplify (Ratio=1.9952623 = +6 dB).
+				'volume=6dB',
+
+				// FINAL FILTER. true-peak limiter at -1.5 dBFS
+				// (linear 0.8414 = 10^(-1.5/20)). nothing in the chain
+				// after this point can introduce peaks, so it's a hard
+				// guarantee. attack/release tuned for transparency.
+				'alimiter=limit=0.8414:attack=5:release=50',
+			].join(',');
+		},
+	},
 };
 
 // build the choices array for the slash command dropdown

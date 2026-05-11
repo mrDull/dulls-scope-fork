@@ -42,6 +42,7 @@ u need:
 
 - [node.js](https://nodejs.org/en/download), any recent LTS
 - [ffmpeg](https://www.ffmpeg.org/download.html) on your PATH. older builds are buggy with the waveform/spectrogram filters so get a recent one
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp) on your PATH if u want `/yt` to work. install via `pip install -U yt-dlp` or `winget install yt-dlp.yt-dlp` or just grab the .exe from the releases page. verify with `yt-dlp --version`. without it, `/yt` will just reply with a friendly error and the rest of the bot still works fine
 
 clone + install:
 
